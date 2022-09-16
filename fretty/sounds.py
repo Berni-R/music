@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, Iterable
 import pyaudio
 import numpy as np
 from scipy.io import wavfile
@@ -163,30 +163,85 @@ class Sound:
             sc.play(sound)
 
 
-class SineSound(Sound):
+class PitchedSound(Sound):
 
-    def __init__(self, freq: Union[float, Note, str], duration: float = 0.5, volume: float = 0.1,
-                 attacked: bool = True,
-                 A4: float = 440.0, fs: int = DEF_SAMPLE_FREQ):
-        if isinstance(freq, str):
-            freq = Note(freq)
-        if isinstance(freq, Note):
-            freq = freq.pitch(A4=A4)
+    def __init__(self,
+                 data: np.ndarray,
+                 freq: float,
+                 fs: int = DEF_SAMPLE_FREQ):
         if fs < 10 * freq:
             warnings.warn(f"Sine wave frequency {freq:.3e} not much higher than samping frequency {fs:,d}!")
 
-        data = volume * np.sin(2.0 * np.pi * np.arange(fs * duration) * freq / fs)
-        super(SineSound, self).__init__(data, fs)
+        super(PitchedSound, self).__init__(data, fs)
         self._freq = freq
 
-        if attacked:
-            t = self.times()
-            amp = 2 * (0.01 / (t + 0.02)) ** 0.5
-            self.modulate(amp, inplace=True)
-
     @property
-    def freq(self) -> float:
+    def frequency(self) -> float:
         return self._freq
+
+
+def _to_frequency(freq: Union[float, Note, str], A4: float) -> float:
+    if isinstance(freq, str):
+        freq = Note(freq)
+    if isinstance(freq, Note):
+        freq = freq.pitch(A4=A4)
+    return freq
+
+
+def SineSound(
+    freq: Union[float, Note, str],
+    phase: Optional[float] = None,
+    duration: float = 0.5,
+    volume: float = 0.1,
+    A4: float = 440.0,
+    fs: int = DEF_SAMPLE_FREQ,
+) -> PitchedSound:
+    freq = _to_frequency(freq, A4)
+    if fs < 10 * freq:
+        warnings.warn(f"Sine wave frequency {freq:.3e} not much higher than samping frequency {fs:,d}!")
+    if phase is None:
+        phase = np.random.rand()
+
+    data = volume * np.sin(2.0 * np.pi * (np.arange(fs * duration) * freq / fs + phase))
+    return PitchedSound(data, freq, fs)
+
+
+def StringSound(
+    freq: Union[float, Note, str],
+    duration: float = 0.5,
+    volume: float = 0.1,
+    attacked: bool = True,
+    overdrive: float = 1.0,
+    overtones: Optional[Iterable[float]] = None,
+    A4: float = 440.0,
+    fs: int = DEF_SAMPLE_FREQ,
+):
+    freq = _to_frequency(freq, A4)
+    if fs < 10 * freq:
+        warnings.warn(f"Sine wave frequency {freq:.3e} not much higher than samping frequency {fs:,d}!")
+    if overtones is None:
+        if overdrive <= 0:
+            raise ValueError(f"overdrive needs to be positive, got {overdrive}")
+        overtones = 2.0 ** (-np.arange(30) / overdrive)
+    overtones /= np.sum(overtones**2)
+
+    N = int(fs * duration)
+    data = np.zeros(N)
+    for n, vol in enumerate(overtones):
+        f = freq * (n + 1)
+        phase = np.random.rand()
+        data += vol * np.sin(2.0 * np.pi * (np.arange(N) * f / fs + phase))
+    data *= volume
+
+    sound = PitchedSound(data, freq, fs)
+
+    if attacked:
+        #TODO: let higher frequencies die off quicker (?)
+        t = sound.times()
+        amp = 2 * (0.01 / (t + 0.02)) ** 0.5
+        sound.modulate(amp, inplace=True)
+
+    return sound
 
 
 class SoundContext:
