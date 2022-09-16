@@ -5,7 +5,6 @@ from scipy.io import wavfile
 import warnings
 
 from .notes import Note
-from .scales import Scale
 
 
 DEF_SAMPLE_FREQ: int = 44_100
@@ -17,7 +16,7 @@ def resample(sound: np.ndarray, orig_fs: int, new_fs: int) -> np.ndarray:
     dt_new = 1.0 / new_fs
 
     t_orig = np.linspace(0, T - dt_orig, num=len(sound))
-    t_new  = np.arange(0, T, step=dt_new)
+    t_new = np.arange(0, T, step=dt_new)
 
     return np.interp(t_new, t_orig, sound)
 
@@ -87,12 +86,14 @@ class Sound:
     def copy(self) -> 'Sound':
         return Sound(self._data.copy(), self._fs)
 
-    def add(self, sound: 'Sound', start_pos: Optional[float] = None) -> 'Sound':
+    def add(self, sound: 'Sound',
+            start_pos: Optional[float] = None) -> 'Sound':
         fs = max(self._fs, sound._fs)
         if start_pos is None:
             start_pos = self.duration
         if start_pos < 0:
-            raise ValueError(f"`start_pos` must be non-negative, got {start_pos}.")
+            raise ValueError(f"`start_pos` must be non-negative, "
+                             f"got {start_pos}.")
 
         new_duration = max(self.duration, start_pos + sound.duration)
 
@@ -100,16 +101,16 @@ class Sound:
 
         self_data = self.data(copy=False, fs=fs)
         assert len(comb._data) >= len(self_data) - 1
-        l = min(len(self_data), len(comb._data))
-        comb._data[:l] = self_data[:l]
+        s = min(len(self_data), len(comb._data))
+        comb._data[:s] = self_data[:s]
 
         i = int(start_pos * fs)
         assert 0 <= i <= len(comb._data)
         sound_data = sound.data(copy=False, fs=fs)
         assert len(comb._data) >= len(sound_data) - 1
         assert len(comb._data) >= i + len(sound_data) - 1
-        l = min(len(sound_data), len(comb._data) - i)
-        comb._data[i : i + l] += sound_data[:l]
+        s = min(len(sound_data), len(comb._data) - i)
+        comb._data[i:i + s] += sound_data[:s]
 
         return comb
 
@@ -135,16 +136,15 @@ class Sound:
     def __rmul__(self, factor: Union[float, int]) -> 'Sound':
         return self.__mul__(factor)
 
-    def __rmul__(self, factor: int) -> 'Sound':
-        return self.__mul__(factor)
-
-    def modulate(self, amplitudes: np.ndarray, inplace: bool = True) -> 'Sound':
+    def modulate(self, amplitudes: np.ndarray,
+                 inplace: bool = True) -> 'Sound':
         if inplace:
             self._data *= amplitudes
             return self
         return Sound(amplitudes * self._data, self._fs)
 
-    def lowpass(self, freq: float, order: int = 5, inplace: bool = True) -> 'Sound':
+    def lowpass(self, freq: float, order: int = 5,
+                inplace: bool = True) -> 'Sound':
         from scipy import signal
 
         sos = signal.butter(order, freq, fs=self._fs, output='sos')
@@ -157,7 +157,10 @@ class Sound:
             return Sound(filtered, self._fs)
 
     def play(self, lowpass: Optional[float] = 5000.0):
-        sound = self if lowpass is None else self.lowpass(lowpass, inplace=False)
+        if lowpass is None:
+            sound = self
+        else:
+            sound = self.lowpass(lowpass, inplace=False)
 
         with SoundContext(fs=self._fs) as sc:
             sc.play(sound)
@@ -170,7 +173,8 @@ class PitchedSound(Sound):
                  freq: float,
                  fs: int = DEF_SAMPLE_FREQ):
         if fs < 10 * freq:
-            warnings.warn(f"Sine wave frequency {freq:.3e} not much higher than samping frequency {fs:,d}!")
+            warnings.warn(f"Sine wave frequency {freq:.3e} not much higher "
+                          f"than samping frequency {fs:,d}!")
 
         super(PitchedSound, self).__init__(data, fs)
         self._freq = freq
@@ -180,34 +184,36 @@ class PitchedSound(Sound):
         return self._freq
 
 
-def _to_frequency(freq: Union[float, Note, str], A4: float) -> float:
-    if isinstance(freq, str):
-        freq = Note(freq)
-    if isinstance(freq, Note):
-        freq = freq.pitch(A4=A4)
-    return freq
+def _to_frequency(f: Union[float, Note, str], A4: float) -> float:
+    if isinstance(f, str):
+        f = Note(f)
+    if isinstance(f, Note):
+        f = f.pitch(A4=A4)
+    return f
 
 
 def SineSound(
-    freq: Union[float, Note, str],
+    f: Union[float, Note, str],
     phase: Optional[float] = None,
     duration: float = 0.5,
     volume: float = 0.1,
     A4: float = 440.0,
     fs: int = DEF_SAMPLE_FREQ,
 ) -> PitchedSound:
-    freq = _to_frequency(freq, A4)
-    if fs < 10 * freq:
-        warnings.warn(f"Sine wave frequency {freq:.3e} not much higher than samping frequency {fs:,d}!")
+    f = _to_frequency(f, A4)
+    if fs < 10 * f:
+        warnings.warn(f"Sine wave frequency {f:.3e} not much higher "
+                      f"than samping frequency {fs:,d}!")
     if phase is None:
         phase = np.random.rand()
 
-    data = volume * np.sin(2.0 * np.pi * (np.arange(fs * duration) * freq / fs + phase))
-    return PitchedSound(data, freq, fs)
+    data = np.sin(2.0 * np.pi * (np.arange(fs * duration) * f / fs + phase))
+    data *= volume
+    return PitchedSound(data, f, fs)
 
 
 def StringSound(
-    freq: Union[float, Note, str],
+    f: Union[float, Note, str],
     duration: float = 0.5,
     volume: float = 0.1,
     attacked: bool = True,
@@ -216,27 +222,29 @@ def StringSound(
     A4: float = 440.0,
     fs: int = DEF_SAMPLE_FREQ,
 ):
-    freq = _to_frequency(freq, A4)
-    if fs < 10 * freq:
-        warnings.warn(f"Sine wave frequency {freq:.3e} not much higher than samping frequency {fs:,d}!")
+    f = _to_frequency(f, A4)
+    if fs < 10 * f:
+        warnings.warn(f"Sine wave frequency {f:.3e} not much higher "
+                      f"than samping frequency {fs:,d}!")
     if overtones is None:
         if overdrive <= 0:
-            raise ValueError(f"overdrive needs to be positive, got {overdrive}")
+            raise ValueError("overdrive needs to be positive, "
+                             f"got {overdrive}")
         overtones = 2.0 ** (-np.arange(30) / overdrive)
     overtones /= np.sum(overtones**2)
 
     N = int(fs * duration)
     data = np.zeros(N)
     for n, vol in enumerate(overtones):
-        f = freq * (n + 1)
+        fn = f * (n + 1)
         phase = np.random.rand()
-        data += vol * np.sin(2.0 * np.pi * (np.arange(N) * f / fs + phase))
+        data += vol * np.sin(2.0 * np.pi * (np.arange(N) * fn / fs + phase))
     data *= volume
 
-    sound = PitchedSound(data, freq, fs)
+    sound = PitchedSound(data, f, fs)
 
     if attacked:
-        #TODO: let higher frequencies die off quicker (?)
+        # TODO: let higher frequencies die off quicker (?)
         t = sound.times()
         amp = 2 * (0.01 / (t + 0.02)) ** 0.5
         sound.modulate(amp, inplace=True)
@@ -272,7 +280,8 @@ class SoundContext:
         self._audio.terminate()
         self._audio = None
 
-    def play(self, sound: Union[np.ndarray, Sound], wait: bool = False) -> np.ndarray:
+    def play(self, sound: Union[np.ndarray, Sound],
+             wait: bool = False) -> np.ndarray:
         if isinstance(sound, Sound):
             sound = sound.data()
 

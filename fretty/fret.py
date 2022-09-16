@@ -13,9 +13,13 @@ NUT_SEP = 2
 
 class Fret:
 
-    def __init__(self, fret_cnt: int = 17, tuning: Union[Tuning, str] = STANDARD_TUNING):
+    def __init__(self, fret_cnt: int = 17,
+                 tuning: Union[Tuning, str] = STANDARD_TUNING):
         self.fret_cnt = fret_cnt
-        self.tuning = tuning.copy() if isinstance(tuning, Tuning) else Tuning(tuning)
+        if isinstance(tuning, str):
+            self.tuning = Tuning(tuning)
+        else:
+            self.tuning = tuning.copy()
         assert len(self.tuning.strings) == 6
 
     def __repr__(self) -> str:
@@ -40,14 +44,19 @@ class Fret:
         w = FRET_WIDTH
         h = FRET_HEIGHT
 
-        return draw.Drawing(margin + (1 + self.fret_cnt + 0.3) * w,
-                        6.3 * h, origin=(-margin - 0.3 * w, -0.3 * h), displayInline=False)
+        return draw.Drawing(
+            margin + (1 + self.fret_cnt + 0.3) * w,
+            6.3 * h,
+            origin=(-margin - 0.3 * w, -0.3 * h),
+            displayInline=False,
+        )
 
-    def draw_fret(self,
-                  d: Optional[draw.Drawing] = None,
-                  font_size: Optional[float] = None,
-                  low_markers: bool = True,
-                  fret_markers: bool = False,
+    def draw_fret(
+            self,
+            d: Optional[draw.Drawing] = None,
+            font_size: Optional[float] = None,
+            low_markers: bool = True,
+            fret_markers: bool = False,
     ) -> draw.Drawing:
         w = FRET_WIDTH
         h = FRET_HEIGHT
@@ -60,37 +69,49 @@ class Fret:
 
         marker_color = 'grey'
         for i, s in enumerate(self.tuning.strings):
-            d.append(draw.Text(str(s), font_size, -font_size, (i + 0.5) * h - font_size / 3,
+            d.append(draw.Text(str(s), font_size, -font_size,
+                               (i + 0.5) * h - font_size / 3,
                                fill=marker_color))
         # markers
         if low_markers:
             for i in [3, 5, 9, 15, 17, 21]:
-                marker = draw.Circle((i + 0.5) * w, 0, 0.1 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.5) * w, 0, 0.1 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
             for i in [7, 12, 19, 24]:
-                marker = draw.Circle((i + 0.35) * w, 0, 0.1 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.35) * w, 0, 0.1 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
-                marker = draw.Circle((i + 0.65) * w, 0, 0.1 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.65) * w, 0, 0.1 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
         if fret_markers:
             for i in [3, 5, 9, 15, 17, 21]:
-                marker = draw.Circle((i + 0.5) * w, 3 * h, 0.2 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.5) * w, 3 * h, 0.2 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
-                marker = draw.Circle((i + 0.5) * w, 0.12 * h, 0.1 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.5) * w, 0.12 * h, 0.1 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
             for i in [7, 19]:
-                marker = draw.Circle((i + 0.5) * w, 2.7 * h, 0.2 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.5) * w, 2.7 * h, 0.2 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
-                marker = draw.Circle((i + 0.5) * w, 3.3 * h, 0.2 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.5) * w, 3.3 * h, 0.2 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
-                marker = draw.Circle((i + 0.35) * w, 0.12 * h, 0.1 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.35) * w, 0.12 * h, 0.1 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
-                marker = draw.Circle((i + 0.65) * w, 0.12 * h, 0.1 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.65) * w, 0.12 * h, 0.1 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
             for i in [12, 24]:
-                marker = draw.Circle((i + 0.5) * w, 2.2 * h, 0.2 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.5) * w, 2.2 * h, 0.2 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
-                marker = draw.Circle((i + 0.5) * w, 3.8 * h, 0.2 * h, stroke_width=0, fill=marker_color)
+                marker = draw.Circle((i + 0.5) * w, 3.8 * h, 0.2 * h,
+                                     stroke_width=0, fill=marker_color)
                 d.append(marker)
         # nut
         nut_1 = draw.Line(
@@ -128,20 +149,21 @@ class Fret:
 
         return d
 
-    def draw_note_at(self,
-                     d: draw.Drawing,
-                     string: int, fret: int,
-                     color: str = 'blue',
-                     shape: Literal['circle', 'rectangle', 'diamond'] = 'circle',
-                     filled: bool = True,
-                     size: Optional[float] = None,
+    def draw_note_at(
+            self,
+            d: draw.Drawing,
+            string: int, fret: int,
+            color: str = 'blue',
+            shape: Literal['circle', 'rectangle', 'diamond'] = 'circle',
+            filled: bool = True,
+            size: Optional[float] = None,
     ) -> draw.Drawing:
         w = FRET_WIDTH
         h = FRET_HEIGHT
         size = size or 0.4 * NOTE_SIZE
 
         if string < 0 or 6 <= string:
-            raise ValueError(f"String needs to be in [0, 5].")
+            raise ValueError("String needs to be in [0, 5].")
 
         if filled:
             kwargs = {'stroke_width': 1, 'fill': color}
@@ -150,13 +172,14 @@ class Fret:
             size -= 2
 
         if shape == 'circle':
-            note = draw.Circle((fret + 0.5) * w, (string + 0.5) * h, size, **kwargs)
+            note = draw.Circle((fret + 0.5) * w, (string + 0.5) * h,
+                               size, **kwargs)
         elif shape == 'rectangle':
             size *= np.pi / 4
-            note = draw.Rectangle((fret + 0.5) * w - size, (string + 0.5) * h - size,
+            note = draw.Rectangle((fret + 0.5) * w - size,
+                                  (string + 0.5) * h - size,
                                   2 * size, 2 * size, **kwargs)
         elif shape == 'diamond':
-            #size *= np.pi / 4
             c = (fret + 0.5) * w, (string + 0.5) * h
             note = draw.Lines(
                 c[0] - size, c[1],
@@ -174,16 +197,19 @@ class Fret:
                   d: draw.Drawing,
                   note: Union[Note, int],
                   **kwargs) -> draw.Drawing:
-        """Draw a given note (at given octavae) on all possible locaations (i.e. string-fret combinations).
-        
+        """Draw a given note (at given octavae) on all possible locations
+        (i.e. string-fret combinations).
+
         For arguments, see `draw_note_at`."""
-        for string, fret in enumerate(fret.locate_note(note)):
+        for string, fret in enumerate(self.locate_note(note)):
             if fret is not None:
                 self.draw_note_at(d, string, fret, **kwargs)
         return d
 
-    def draw_all(self, note_styler: Callable[[int, int, Note], Optional[dict]], **fret_args) -> draw.Drawing:
-        """Draw the fret will all notes, styled by `note_styler` (which can also not draw a note)."""
+    def draw_all(self, note_styler: Callable[[int, int, Note], Optional[dict]],
+                 **fret_args) -> draw.Drawing:
+        """Draw the fret will all notes, styled by `note_styler`
+        (which can also not draw a note)."""
         d = self.draw_fret(**fret_args)
         for s in range(6):
             for f in range(self.fret_cnt + 1):

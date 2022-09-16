@@ -46,7 +46,7 @@ def metronome(
     dt = 1 / cps
 
     if dt < min(click.duration, clock.duration):
-        raise ValueError(f"Too many clicks per second!")
+        raise ValueError("Too many clicks per second!")
 
     click = click & Sound.silence(dt)
     clock = clock & Sound.silence(dt)
@@ -79,7 +79,8 @@ def plot_spectrum(
     else:
         fig = ax.get_figure()
 
-    ax.pcolormesh(t, f[:i_max], np.abs(Zxx[:i_max]), shading='gouraud', vmin=0.0)
+    ax.pcolormesh(t, f[:i_max], np.abs(Zxx[:i_max]),
+                  shading='gouraud', vmin=0.0)
     ax.set_title('STFT Magnitude', fontsize=16)
     ax.set_ylabel('Frequency [Hz]', fontsize=12)
     ax.set_xlabel('Time [sec]', fontsize=12)

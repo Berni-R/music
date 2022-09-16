@@ -6,6 +6,7 @@ from copy import deepcopy
 
 _A4_FREQ = 440.0
 
+
 class Note:
     f"""A note in a twelve-tone equal temperament.
 
@@ -14,7 +15,7 @@ class Note:
             F#3 or Bb4. The name itself ("F" in "F#3") has to be upper case,
             accidentals can be concatenated (like in "F##b#3"), and one has
             to specify the octave.
-    
+
     Each semitone is simply a frequency ratio of 2^(1/12) and, for instance,
     C# and Db are the same note."""
     __slots__ = ['_note', '_octave']
@@ -33,9 +34,11 @@ class Note:
         self._octave: int = int(octave) + note // 12
 
     @classmethod
-    def closest_to(cls,
+    def closest_to(
+            cls,
             freq: float, ret_cents: bool = False,
-            A4: float = _A4_FREQ) -> 'Note':
+            A4: float = _A4_FREQ,
+    ) -> 'Note':
         f"""Find the note that is closest to a given frequence
         (assuming A4 has {_A4_FREQ:.1f} Hz).
 
@@ -57,10 +60,10 @@ class Note:
         """Get the name of the note (no octave; with octave: `as_str()`).
 
         Args:
-            flat (bool):    If True, use s flat key signature and, for instance,
-                            use Gb. If False, use a sharp key signature and then
-                            use F# for the same note (we are in a twelve-tone
-                            equal temperament)."""
+            flat (bool):    If True, use s flat key signature and, for
+                            instance, use Gb. If False, use a sharp key
+                            signature and then use F# for the same note (we are
+                            in a twelve-tone equal temperament)."""
         if flat:
             names = "C Db D Eb E F Gb G Ab A Bb B"
         else:
@@ -73,12 +76,12 @@ class Note:
 
     def as_str(self, flat: bool = False) -> str:
         """Get the name of the note (including octave; without octave: `name()`).
-        
+
         Args:
-            flat (bool):    If True, use s flat key signature and, for instance,
-                            use Gb. If False, use a sharp key signature and then
-                            use F# for the same note (we are in a twelve-tone
-                            equal temperament)."""
+            flat (bool):    If True, use s flat key signature and, for
+                            instance, use Gb. If False, use a sharp key
+                            signature and then use F# for the same note (we are
+                            in a twelve-tone equal temperament)."""
         return f"{self.name(flat=flat)}{self._octave}"
 
     def copy(self) -> 'Note':
@@ -120,7 +123,7 @@ class Note:
 
 INTERVAL_NAME = [
     'unison',
-    'semitone',  #'minor second'
+    'semitone',  # 'minor second'
     'major second',
     'minor third',
     'major third',
@@ -151,7 +154,7 @@ class Tuning:
             strings = strings[0].split("-")
             strings = list(Note(s) for s in strings)
         if len(strings) not in [6, 7, 8]:
-            raise ValueError(f"A guitar should have 6 (or 7 or 8) strings.")
+            raise ValueError("A guitar should have 6 (or 7 or 8) strings.")
         if not all(isinstance(s, Note) for s in strings):
             raise TypeError("Each string should be of type Note.")
         self.strings = deepcopy(strings)
@@ -162,7 +165,7 @@ class Tuning:
             tuning = KNOWN_TUNINGS[name]
         except KeyError:
             known = ', '.join(KNOWN_TUNINGS.keys())
-            raise KeyError(f'Unknown tuning name "{name}". Choose from: {known}')
+            raise KeyError(f'Unknown tuning "{name}". Choose from: {known}')
         return tuning.copy()
 
     def copy(self) -> 'Tuning':

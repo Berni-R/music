@@ -59,10 +59,12 @@ class BaseScale:
     def _from_name(cls, name: str, show_symbol: str, pattern: str, db: dict):
         m = regex.match(pattern, name)
         if m is None:
-            raise ValueError(f"'{name}' does not match the {show_symbol} name pattern.")
+            raise ValueError(f"'{name}' does not match the "
+                             f"{show_symbol} name pattern.")
         base, name = m.groups()
         if name not in db:
-            raise ValueError(f"Unknown {show_symbol} name '{name}'. Known {show_symbol}: {db.keys()}")
+            raise ValueError(f"Unknown {show_symbol} name '{name}'. "
+                             f"Known {show_symbol}: {db.keys()}")
         return cls(base.upper(), db[name])
 
     @property
@@ -79,17 +81,20 @@ class BaseScale:
     def note_names(self) -> list[str]:
         """Get a list of the names (no octave) of the notes in this scale."""
         sharps = [(Note(self.base + "4") + s).name() for s in self.steps]
-        flats = [(Note(self.base + "4") + s).name(flat=True) for s in self.steps]
+        flats = [(Note(self.base + "4") + s).name(flat=True)
+                 for s in self.steps]
         if set(x[0] for x in flats) > set(x[0] for x in sharps):
             return flats
         else:
             return sharps
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.base}, {[s for s in self.steps]})"
+        class_name = self.__class__.__name__
+        return f"{class_name}({self.base}, {self._steps})"
 
     def rotate(self, n: int) -> 'BaseScale':
-        """Return the scale with the same notes, but take the n-th note as base."""
+        """Return the scale with the same notes,
+        but take the n-th note as base."""
         n = n % len(self._steps)
         steps = self._steps[n:] + [12 + s for s in self._steps[:n]]
         note = Note(self.base + "4")
@@ -111,10 +116,12 @@ class Scale(BaseScale):
     @classmethod
     def from_name(cls, name: str) -> 'Scale':
         """Create a scale from a trivial name such as "Cmaj"."""
-        return super()._from_name(name, "scale", r"([a-gA-G][#b]*)[ -]?(.*)", NAMED_SCALES)
+        return super()._from_name(name, "scale", r"([a-gA-G][#b]*)[ -]?(.*)",
+                                  NAMED_SCALES)
 
     def name(self, sep: str = "-") -> Optional[str]:
-        """Get the trivial name (e.g. "Emin") of this scale, or None if unknown."""
+        """Get the trivial name (e.g. "Emin") of this scale,
+        or None if unknown."""
         steps = set(self._steps)
         if steps == {0, 2, 4, 5, 7, 9, 11}:
             return self._base + "maj"
@@ -127,20 +134,24 @@ class Scale(BaseScale):
 
     def key_signature(self) -> str:
         """Return the scale's key signature.
-        
-        This is be an empty string for Cmaj, 'b' for Fmaj, or '###' for Amaj."""
+
+        This will be an empty string for Cmaj, 'b' for Fmaj,
+        or '###' for Amaj."""
         notes = self.note_names()
         return ''.join(n[1:] for n in notes if len(n) > 1)
 
     def rotate(self, n: int) -> 'Scale':
-        """Return the scale with the same notes, but take the n-th note as base."""
+        """Return the scale with the same notes,
+        but take the n-th note as base."""
         base = super().rotate(n)
         base.__class__ = self.__class__
         return base
 
-    def chords(self, search_chords: Iterable[str] = ('maj', 'min')) -> list[str]:
+    def chords(self,
+               search_chords: Iterable[str] = ('maj', 'min')) -> list[str]:
         """Return the name of the chords that are in this scale."""
-        chords = {name: steps for name, steps in NAMED_CHORDS.items() if name in search_chords}
+        chords = {name: steps for name, steps in NAMED_CHORDS.items()
+                  if name in search_chords}
 
         chord_names = []
         for r in range(len(self._steps)):
@@ -151,7 +162,8 @@ class Scale(BaseScale):
 
         return chord_names
 
-    def play(self, octave: int = 3, down: bool = False, note_duration: float = 0.2):
+    def play(self, octave: int = 3, down: bool = False,
+             note_duration: float = 0.2):
         from .sounds import SoundContext, SineSound
 
         base = Note(f"{self._base}{octave}")
@@ -171,10 +183,12 @@ class Chord(BaseScale):
     @classmethod
     def from_name(cls, name: str) -> 'Chord':
         """Create a chord from a trivial name such as "Dmin"."""
-        return super()._from_name(name, "chord", r"([a-gA-G][#b]*)(.*)", NAMED_CHORDS)
+        return super()._from_name(name, "chord", r"([a-gA-G][#b]*)(.*)",
+                                  NAMED_CHORDS)
 
     def name(self) -> Optional[str]:
-        """Get the trivial name (e.g. "Emin") of this chord, or None if unknown."""
+        """Get the trivial name (e.g. "Emin") of this chord,
+        or None if unknown."""
         steps = set(self._steps)
         for name, s in NAMED_CHORDS.items():
             if steps == set(s):
