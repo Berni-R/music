@@ -78,8 +78,8 @@ class BaseScale:
 
     def note_names(self) -> list[str]:
         """Get a list of the names (no octave) of the notes in this scale."""
-        sharps = [(Note(self.base + "4") + s).note_name() for s in self.steps]
-        flats = [(Note(self.base + "4") + s).note_name(flat=True) for s in self.steps]
+        sharps = [(Note(self.base + "4") + s).name() for s in self.steps]
+        flats = [(Note(self.base + "4") + s).name(flat=True) for s in self.steps]
         if set(x[0] for x in flats) > set(x[0] for x in sharps):
             return flats
         else:
@@ -94,7 +94,7 @@ class BaseScale:
         steps = self._steps[n:] + [12 + s for s in self._steps[:n]]
         note = Note(self.base + "4")
         shift = steps[0]
-        base = (note + shift).note_name()
+        base = (note + shift).name()
         steps = [s - shift for s in steps]
         return BaseScale(base, steps)
 

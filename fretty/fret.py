@@ -2,7 +2,7 @@ from typing import Optional, Literal, Union, Callable
 import numpy as np
 import drawSvg as draw
 
-from .notes import Note, Tuning, TUNING_STANDARD
+from .notes import Note, Tuning, STANDARD_TUNING
 
 
 FRET_WIDTH = 45
@@ -13,7 +13,7 @@ NUT_SEP = 2
 
 class Fret:
 
-    def __init__(self, fret_cnt: int = 17, tuning: Union[Tuning, str] = TUNING_STANDARD):
+    def __init__(self, fret_cnt: int = 17, tuning: Union[Tuning, str] = STANDARD_TUNING):
         self.fret_cnt = fret_cnt
         self.tuning = tuning.copy() if isinstance(tuning, Tuning) else Tuning(tuning)
         assert len(self.tuning.strings) == 6
